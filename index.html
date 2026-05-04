@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Segurança Pública · Pará</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050d08; --bg2:#0a1a0d; --bg3:#0f2214;
+  --border:#163520; --border2:#1f4a2c;
+  --green:#4ade80; --green2:#22c55e; --forest:#166534;
+  --teal:#2dd4bf; --amber:#f59e0b; --blue:#60a5fa;
+  --red:#f87171; --purple:#a78bfa; --pink:#f472b6;
+  --slate:#94a3b8; --txt:#dcfce7; --txt2:#86efac; --muted:#3d6b4a;
+  --font:'Source Sans 3',sans-serif; --mono:'Source Code Pro',monospace;
+}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--txt);
+  height:100vh;display:flex;flex-direction:column;overflow:hidden;
+}
+#hdr{
+  height:58px;flex-shrink:0;z-index:600;
+  background:linear-gradient(90deg,#020805 0%,#081409 50%,#050d08 100%);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;padding:0 18px;
+  box-shadow:0 2px 20px rgba(0,0,0,.6);
+}
+.hdr-icon{font-size:24px}
+.hdr-t h1{font-size:15px;font-weight:700;color:#bbf7d0;line-height:1.2}
+.hdr-t p{font-size:9.5px;color:var(--muted);margin-top:1px}
+.hdr-kpis{margin-left:auto;display:flex;gap:20px;align-items:center}
+.hkpi{text-align:center}
+.hkpi-v{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--green);line-height:1}
+.hkpi-v.amber{color:var(--amber)}
+.hkpi-v.blue{color:var(--blue)}
+.hkpi-v.red{color:var(--red)}
+.hkpi-v.purple{color:var(--purple)}
+.hkpi-l{font-size:9px;color:var(--muted);margin-top:2px}
+
+#main{display:flex;flex:1;overflow:hidden}
+#map{flex:1;position:relative}
+#panel{
+  width:430px;background:var(--bg2);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:-4px 0 24px rgba(0,0,0,.5);
+}
+#tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{
+  flex:1;padding:10px 4px;text-align:center;font-size:10px;font-weight:600;
+  letter-spacing:.5px;text-transform:uppercase;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .2s
+}
+.tab.active{color:var(--green);border-bottom-color:var(--green);background:rgba(74,222,128,.04)}
+.tab:hover:not(.active){color:var(--txt2)}
+
+.tc{flex:1;overflow-y:auto;display:none;flex-direction:column;gap:10px;padding:13px}
+.tc.active{display:flex}
+.tc::-webkit-scrollbar{width:3px}
+.tc::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:13px;flex-shrink:0
+}
+.card h4{
+  font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px
+}
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mbtn{
+  padding:8px;border-radius:7px;border:1px solid var(--border2);
+  background:var(--bg);color:var(--muted);font-family:var(--font);
+  font-size:10.5px;font-weight:600;cursor:pointer;transition:all .2s;
+  line-height:1.15
+}
+.mbtn.on{background:var(--forest);border-color:var(--green2);color:var(--txt)}
+
+.kgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.kpi{
+  background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:10px;text-align:center
+}
+.kval{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--green);line-height:1}
+.kval.amber{color:var(--amber)} .kval.blue{color:var(--blue)}
+.kval.purple{color:var(--purple)} .kval.teal{color:var(--teal)}
+.kval.red{color:var(--red)} .kval.pink{color:var(--pink)}
+.klbl{font-size:9px;color:var(--muted);margin-top:4px}
+
+.narr{
+  padding:10px 12px;border-left:2px solid var(--forest);border-radius:0 8px 8px 0;
+  background:rgba(22,101,52,.1);font-size:11.5px;line-height:1.65;color:#a7f3d0
+}
+.srow{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid var(--border);font-size:11px
+}
+.srow:last-child{border-bottom:none}
+.slbl{color:var(--muted)} .sval{font-weight:600;color:#bbf7d0}
+
+.ritem{
+  display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:7px;
+  margin-bottom:2px;background:var(--bg);border:1px solid var(--border);
+  transition:border-color .15s
+}
+.ritem:hover{border-color:var(--green2)}
+.rnum{font-family:var(--mono);font-size:10px;color:var(--muted);width:18px;text-align:right}
+.rname{flex:1;font-size:11.5px;color:var(--txt)}
+.rname small{display:block;font-size:9px;color:var(--muted)}
+.rval{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green);white-space:nowrap}
+.rbar{height:2px;background:var(--border);border-radius:1px;margin-top:3px}
+.rfill{height:2px;background:var(--forest);border-radius:1px;transition:width .5s}
+
+.cwrap{position:relative}
+.h190{height:190px}.h210{height:210px}.h240{height:240px}
+
+/* ── Filter Bar ── */
+#filter-bar{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  z-index:800;display:flex;align-items:center;gap:8px;
+  width:min(820px,calc(100% - 20px));
+  background:rgba(5,13,8,.93);
+  border:1px solid var(--border2);border-radius:16px;padding:8px 12px;
+  backdrop-filter:blur(8px);box-shadow:0 2px 12px rgba(0,0,0,.4);
+  flex-wrap:wrap;
+}
+.flt-group{display:flex;flex-direction:column;gap:2px;flex:1;min-width:120px}
+.flt-label{font-size:8.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.flt-select{
+  background:var(--bg);border:1px solid var(--border2);border-radius:7px;
+  color:var(--txt2);font-family:var(--font);font-size:10.5px;font-weight:600;
+  padding:5px 8px;cursor:pointer;outline:none;transition:border-color .2s;
+  width:100%;
+}
+.flt-select:focus{border-color:var(--green2)}
+.flt-select option{background:var(--bg2);color:var(--txt)}
+.flt-clear{
+  padding:6px 12px;border-radius:9px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted);font-family:var(--font);
+  font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;
+  white-space:nowrap;align-self:flex-end;
+}
+.flt-clear.active{border-color:var(--green2);color:var(--green)}
+.flt-clear.active:hover{background:rgba(248,113,113,.15);border-color:#f87171;color:#f87171}
+
+#leg{
+  position:absolute;bottom:24px;right:16px;z-index:800;
+  background:rgba(5,13,8,.94);border:1px solid var(--border2);
+  border-radius:10px;padding:12px 14px;min-width:220px;
+  backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.5)
+}
+#leg h5{
+  font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px
+}
+#leg-scale{
+  height:8px;border-radius:5px;
+  background:linear-gradient(to right,#13291b,#1f4a2c,#22c55e,#fbbf24,#f87171);
+  margin-bottom:5px
+}
+.leg-row{display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}
+
+#loading{
+  position:fixed;inset:0;background:var(--bg);display:flex;
+  align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:14px
+}
+.spin{
+  width:42px;height:42px;border:2px solid var(--border);
+  border-top-color:var(--green);border-radius:50%;animation:sp .7s linear infinite
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+#loading p{font-size:12px;color:var(--muted)}
+#load-detail{font-size:10px;color:var(--border2);margin-top:4px}
+
+.lf-tip{
+  background:#030a05 !important;border:1px solid var(--border2) !important;
+  color:var(--txt) !important;font-family:var(--font) !important;
+  font-size:12px !important;padding:8px 12px !important;border-radius:8px !important;
+  box-shadow:0 3px 12px rgba(0,0,0,.5) !important
+}
+/* ── Vizinhança ── */
+.viz-info{
+  font-size:10.5px;line-height:1.6;color:#a7f3d0;
+  padding:9px 11px;border-left:2px solid #2dd4bf;
+  background:rgba(45,212,191,.07);border-radius:0 8px 8px 0;margin-bottom:2px
+}
+.viz-info b{color:#2dd4bf}
+.viz-select{
+  width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:7px;
+  color:var(--txt2);font-family:var(--font);font-size:11px;font-weight:600;
+  padding:6px 9px;cursor:pointer;outline:none;margin-bottom:2px
+}
+.viz-select option{background:var(--bg2)}
+.viz-legend{
+  display:flex;align-items:center;gap:6px;font-size:9.5px;color:var(--muted);
+  padding:5px 0;flex-wrap:wrap
+}
+.viz-legend-bar{
+  flex:1;height:7px;border-radius:4px;min-width:80px;
+  background:linear-gradient(to right,#3b82f6,#93c5fd,#e5e7eb,#fca5a5,#ef4444)
+}
+.viz-rank-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.viz-rank-col h5{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+.viz-rank-col h5.epi{color:#f87171} .viz-rank-col h5.ilha{color:#60a5fa}
+.viz-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:4px 6px;border-radius:5px;margin-bottom:2px;font-size:10px;
+  background:var(--bg);border:1px solid var(--border)
+}
+.viz-row .vr-name{color:var(--txt2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.viz-row .vr-val{font-family:var(--mono);font-size:10px;font-weight:600;white-space:nowrap;margin-left:4px}
+.viz-row .vr-val.epi{color:#f87171} .viz-row .vr-val.ilha{color:#60a5fa}
+.viz-spinner{text-align:center;padding:20px;color:var(--muted);font-size:11px}
+#leg-viz{
+  position:absolute;bottom:24px;right:16px;z-index:800;
+  background:rgba(5,13,8,.94);border:1px solid var(--border2);
+  border-radius:10px;padding:12px 14px;min-width:220px;
+  backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.5);
+  display:none
+}
+#leg-viz h5{font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+#leg-viz-scale{height:8px;border-radius:5px;background:linear-gradient(to right,#3b82f6,#93c5fd,#e5e7eb,#fca5a5,#ef4444);margin-bottom:5px}
+.leg-viz-row{display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}
+@media (max-width:1100px){
+  #panel{width:400px}
+  .metric-grid{grid-template-columns:repeat(2,1fr)}
+  .kgrid{grid-template-columns:repeat(2,1fr)}
+  .viz-rank-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spin"></div>
+  <p>Carregando Segurança Pública do Pará...</p>
+  <div id="load-detail">Lendo GeoJSON municipal</div>
+</div>
+
+<div id="hdr">
+  <div class="hdr-icon">🛡️</div>
+  <div class="hdr-t">
+    <h1>Segurança Pública · Municípios do Pará</h1>
+    <p>GeoJSON municipal agregado no navegador · CVLI, Furto, Roubo e Densidades</p>
+  </div>
+  <div class="hdr-kpis">
+    <div class="hkpi">
+      <div class="hkpi-v red" id="hdr-cvli">—</div>
+      <div class="hkpi-l">CVLI total</div>
+    </div>
+    <div class="hkpi">
+      <div class="hkpi-v amber" id="hdr-furto">—</div>
+      <div class="hkpi-l">Furto total</div>
+    </div>
+    <div class="hkpi">
+      <div class="hkpi-v blue" id="hdr-roubo">—</div>
+      <div class="hkpi-l">Roubo total</div>
+    </div>
+    <div class="hkpi">
+      <div class="hkpi-v purple" id="hdr-mun">—</div>
+      <div class="hkpi-l">municípios</div>
+    </div>
+  </div>
+</div>
+
+<div id="main">
+  <div id="map">
+
+    <!-- Filter Bar -->
+    <div id="filter-bar">
+      <div class="flt-group">
+        <span class="flt-label">🧭 Regional</span>
+        <select class="flt-select" id="flt-regional" onchange="onFilterChange('regional')">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div class="flt-group">
+        <span class="flt-label">🏙️ Cidade</span>
+        <select class="flt-select" id="flt-cidade" onchange="onFilterChange('cidade')">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div class="flt-group">
+        <span class="flt-label">👥 Faixa Populacional</span>
+        <select class="flt-select" id="flt-faixa" onchange="onFilterChange('faixa')">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div class="flt-group">
+        <span class="flt-label">📅 Mês</span>
+        <select class="flt-select" id="flt-mes" onchange="onFilterChange('mes')">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <button class="flt-clear" id="flt-clear-btn" onclick="clearFilters()">✕ Limpar</button>
+    </div>
+
+    <div id="leg">
+      <h5 id="leg-title">Indicador no mapa</h5>
+      <div id="leg-scale"></div>
+      <div class="leg-row">
+        <span id="leg-min">0</span>
+        <span id="leg-max">0</span>
+      </div>
+    </div>
+
+    <div id="leg-viz">
+      <h5>Pressão de Vizinhança</h5>
+      <div id="leg-viz-scale"></div>
+      <div class="leg-viz-row">
+        <span>🔵 Ilha</span>
+        <span>⚪ Neutro</span>
+        <span>🔴 Epicentro</span>
+      </div>
+      <div style="font-size:9px;color:var(--muted);margin-top:5px" id="leg-viz-ind">—</div>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div id="tabs">
+      <div class="tab active" onclick="switchTab('visao')">🗺 VISÃO</div>
+      <div class="tab" onclick="switchTab('ranking')">🏆 RANKING</div>
+      <div class="tab" onclick="switchTab('historia')">📈 HISTÓRICO</div>
+      <div class="tab" onclick="switchTab('regionais')">🧭 REGIONAIS</div>
+      <div class="tab" onclick="switchTab('vizinhanca')">🔗 VIZINHANÇA</div>
+    </div>
+
+    <div id="tc-visao" class="tc active">
+      <div class="card">
+        <h4>Indicador em destaque</h4>
+        <div class="metric-grid" id="metric-map-panel"></div>
+        <button class="mbtn" id="btn-vizinhanca" onclick="activateVizinhanca()"
+          style="margin-top:8px;width:100%;font-size:10.5px;display:flex;align-items:center;justify-content:center;gap:6px">
+          🔗 Análise de Vizinhança
+        </button>
+      </div>
+
+      <div class="narr" id="narr-main"></div>
+
+      <div class="card">
+        <h4>KPIs — <span id="kpi-sel-lbl">Pará</span></h4>
+        <div class="kgrid" id="kpi-grid"></div>
+      </div>
+
+      <div class="card">
+        <h4>Comparação Mensal — <span id="compare-metric-lbl" style="color:var(--green)">CVLI</span></h4>
+        <div class="cwrap h210"><canvas id="chart-compare"></canvas></div>
+      </div>
+
+      <div class="card" id="detail-card" style="display:none">
+        <h4>Detalhe — <span id="det-nome" style="color:var(--green)">—</span></h4>
+        <div id="det-stats"></div>
+      </div>
+    </div>
+
+    <div id="tc-ranking" class="tc">
+      <div class="card">
+        <h4>Ordenar por</h4>
+        <div class="metric-grid" id="metric-rank"></div>
+      </div>
+
+      <div class="card">
+        <h4>Top 20 Municípios — <span id="rank-title">CVLI</span></h4>
+        <div class="cwrap h240"><canvas id="chart-rank-bar"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h4>Top 50 Municípios</h4>
+        <div id="ranking-mun"></div>
+      </div>
+    </div>
+
+    <div id="tc-historia" class="tc">
+      <div class="card">
+        <h4>Série Mensal — Ocorrências <span id="hist-filter-badge" style="display:none;font-size:9px;background:var(--forest);color:var(--green);padding:2px 6px;border-radius:10px;margin-left:6px;font-weight:700"></span></h4>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.55">
+          Soma mensal de <em>CVLI</em>, <em>Furto</em> e <em>Roubo</em> nos municípios filtrados.
+        </p>
+        <div class="cwrap h210"><canvas id="chart-serie-ocorrencias"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h4>Série Mensal — Densidade por 100 mil hab.</h4>
+        <div class="cwrap h210"><canvas id="chart-serie-densidade"></canvas></div>
+      </div>
+    </div>
+
+    <div id="tc-regionais" class="tc">
+      <div class="card">
+        <h4>Indicador por Regional</h4>
+        <div class="metric-grid" id="metric-regional"></div>
+      </div>
+
+      <div class="card">
+        <h4>Regionais — <span id="regional-title">CVLI</span></h4>
+        <div class="cwrap h240"><canvas id="chart-regionais"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h4>Detalhe por Regional</h4>
+        <div id="regional-detail"></div>
+      </div>
+    </div>
+
+    <div id="tc-vizinhanca" class="tc">
+      <div class="card">
+        <h4>🔗 Análise de Vizinhança</h4>
+        <div class="viz-info">
+          Calcula para cada município a <b>média dos vizinhos diretos</b> e o <b>índice de pressão</b> (município − média vizinhos).<br>
+          🔴 <b>Epicentro</b>: acima dos vizinhos &nbsp;|&nbsp; 🔵 <b>Ilha de segurança</b>: abaixo dos vizinhos
+        </div>
+        <select class="viz-select" id="viz-indicador" onchange="buildVizinhanca()" style="margin-top:10px">
+          <option value="cvli_total">CVLI</option>
+          <option value="furto_total">Furto</option>
+          <option value="roubo_total">Roubo</option>
+          <option value="densidade_cvli">Densidade CVLI</option>
+          <option value="densidade_furto">Densidade Furto</option>
+          <option value="densidade_roubo">Densidade Roubo</option>
+        </select>
+        <div class="viz-legend" style="margin-top:8px">
+          <span>🔵 Ilha</span>
+          <div class="viz-legend-bar"></div>
+          <span>🔴 Epicentro</span>
+        </div>
+      </div>
+
+      <div class="card" id="viz-kpis-card">
+        <h4>KPIs — Vizinhança</h4>
+        <div class="kgrid" id="viz-kpis"></div>
+      </div>
+
+      <div class="card">
+        <h4>Top Epicentros &amp; Ilhas de Segurança</h4>
+        <div class="viz-rank-grid" id="viz-ranks"></div>
+      </div>
+
+      <div class="card">
+        <h4>Tabela Completa — <span id="viz-table-lbl" style="color:#2dd4bf">CVLI</span></h4>
+        <div id="viz-table"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const GEOJSON_URL = 'dados_seguranca_puplica_pa.geojson';
+const MONTHS = ['JANEIRO','FEVEREIRO','MARCO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+const MONTHS_SHORT = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+const METRICS = {
+  cvli_total:      { short:'CVLI',        label:'CVLI',           color:'#f87171', type:'count',   fmt: v => fmtInt(v) },
+  furto_total:     { short:'Furto',       label:'Furto',          color:'#f59e0b', type:'count',   fmt: v => fmtInt(v) },
+  roubo_total:     { short:'Roubo',       label:'Roubo',          color:'#60a5fa', type:'count',   fmt: v => fmtInt(v) },
+  densidade_cvli:  { short:'Dens. CVLI',  label:'Densidade CVLI', color:'#f472b6', type:'density', fmt: v => fmtDec(v)+' /100 mil' },
+  densidade_furto: { short:'Dens. Furto', label:'Densidade Furto',color:'#2dd4bf', type:'density', fmt: v => fmtDec(v)+' /100 mil' },
+  densidade_roubo: { short:'Dens. Roubo', label:'Densidade Roubo',color:'#a78bfa', type:'density', fmt: v => fmtDec(v)+' /100 mil' }
+};
+
+let map, layerMun;
+let allFeatures = [];       // raw geojson features
+let municipalData = [];     // aggregated per municipality (full dataset)
+let municipalById = new Map();
+let regionalData = [];
+let stateSummary = null;
+let stateMonthly = {};      // full monthly totals (no filter)
+
+// filtered views
+let filteredMunicipalData = [];
+let filteredMonthly = {};
+let filteredRegionalData = [];
+let filteredSummary = null;
+
+let currentMetric  = 'cvli_total';
+let rankMetric     = 'cvli_total';
+let regionalMetric = 'cvli_total';
+let selectedId     = null;
+let metricRange    = {min:0,max:1};
+
+// active filters
+let activeFilters = { regional:'', cidade:'', faixa:'', mes:'' };
+
+let cCompare=null, cRank=null, cSerieOc=null, cSerieDen=null, cRegionais=null;
+
+function num(v){ return Number(v)||0; }
+function fmtInt(v){ return Math.round(num(v)).toLocaleString('pt-BR'); }
+function fmtDec(v){ return num(v).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}); }
+function fmtArea(v){ return num(v).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' km²'; }
+function byId(id){ return document.getElementById(id); }
+
+function hexToRgb(hex){
+  const h=hex.replace('#','');
+  return{r:parseInt(h.substring(0,2),16),g:parseInt(h.substring(2,4),16),b:parseInt(h.substring(4,6),16)};
+}
+function rgbToHex({r,g,b}){
+  const h=v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0');
+  return`#${h(r)}${h(g)}${h(b)}`;
+}
+function mix(c1,c2,t){
+  const a=hexToRgb(c1),b=hexToRgb(c2);
+  return rgbToHex({r:a.r+(b.r-a.r)*t,g:a.g+(b.g-a.g)*t,b:a.b+(b.b-a.b)*t});
+}
+
+// ── Filter helpers ──────────────────────────────────────────────
+function getFilteredFeatures(){
+  return allFeatures.filter(ft => {
+    const p = ft.properties||{};
+    if(activeFilters.regional && p.regionais !== activeFilters.regional) return false;
+    if(activeFilters.cidade   && (p.CIDADE||p.NM_MUN_y||'') !== activeFilters.cidade) return false;
+    if(activeFilters.faixa    && p.Faixa !== activeFilters.faixa) return false;
+    if(activeFilters.mes      && p.mes_fato !== activeFilters.mes) return false;
+    return true;
+  });
+}
+
+function rebuildFilteredData(){
+  const features = getFilteredFeatures();
+  const byMun = new Map();
+  const regionals = new Map();
+  const monthly = {};
+  MONTHS.forEach(m=>{ monthly[m]={cvli_total:0,furto_total:0,roubo_total:0}; });
+
+  features.forEach(ft=>{
+    const p=ft.properties||{};
+    const id=String(p.CD_MUN);
+    const mes=p.mes_fato;
+    if(!byMun.has(id)){
+      // find base mun data for geometry/static fields
+      const base = municipalById.get(id)||{};
+      byMun.set(id,{
+        cd_mun:id,
+        municipio:p.CIDADE||p.NM_MUN_y||`Mun ${id}`,
+        uf:p.SIGLA_UF||'PA',
+        regional:p.regionais||'Sem regional',
+        faixa_populacional:p.Faixa||'Sem faixa',
+        populacao:base.populacao||num(p['Polulação']),
+        area_km2:base.area_km2||num(p.AREA_KM2),
+        n_meses_com_registro:0,
+        cvli_total:0,furto_total:0,roubo_total:0,
+        densidade_cvli:0,densidade_furto:0,densidade_roubo:0,
+        geometry:base.geometry||ft.geometry,
+        monthly:{}
+      });
+    }
+    const row=byMun.get(id);
+    if(!row.monthly[mes]) row.monthly[mes]={cvli_total:0,furto_total:0,roubo_total:0};
+    row.cvli_total+=num(p.CVLI);
+    row.furto_total+=num(p.FURTO);
+    row.roubo_total+=num(p.ROUBO);
+    row.monthly[mes].cvli_total+=num(p.CVLI);
+    row.monthly[mes].furto_total+=num(p.FURTO);
+    row.monthly[mes].roubo_total+=num(p.ROUBO);
+    row.n_meses_com_registro=Object.keys(row.monthly).length;
+    if(monthly[mes]){
+      monthly[mes].cvli_total+=num(p.CVLI);
+      monthly[mes].furto_total+=num(p.FURTO);
+      monthly[mes].roubo_total+=num(p.ROUBO);
+    }
+  });
+
+  filteredMunicipalData = Array.from(byMun.values()).map(d=>{
+    d.densidade_cvli  = d.populacao?(d.cvli_total/d.populacao)*100000:0;
+    d.densidade_furto = d.populacao?(d.furto_total/d.populacao)*100000:0;
+    d.densidade_roubo = d.populacao?(d.roubo_total/d.populacao)*100000:0;
+    return d;
+  }).sort((a,b)=>a.municipio.localeCompare(b.municipio,'pt-BR'));
+
+  filteredMonthly = monthly;
+
+  filteredMunicipalData.forEach(d=>{
+    if(!regionals.has(d.regional)) regionals.set(d.regional,{regional:d.regional,municipios:0,populacao:0,area_km2:0,cvli_total:0,furto_total:0,roubo_total:0});
+    const r=regionals.get(d.regional);
+    r.municipios++;r.populacao+=d.populacao;r.area_km2+=d.area_km2;
+    r.cvli_total+=d.cvli_total;r.furto_total+=d.furto_total;r.roubo_total+=d.roubo_total;
+  });
+  filteredRegionalData = Array.from(regionals.values()).map(r=>({
+    ...r,
+    densidade_cvli:r.populacao?(r.cvli_total/r.populacao)*100000:0,
+    densidade_furto:r.populacao?(r.furto_total/r.populacao)*100000:0,
+    densidade_roubo:r.populacao?(r.roubo_total/r.populacao)*100000:0
+  }));
+
+  const popTotal=filteredMunicipalData.reduce((a,c)=>a+c.populacao,0);
+  const cvliTotal=filteredMunicipalData.reduce((a,c)=>a+c.cvli_total,0);
+  const furtoTotal=filteredMunicipalData.reduce((a,c)=>a+c.furto_total,0);
+  const rouboTotal=filteredMunicipalData.reduce((a,c)=>a+c.roubo_total,0);
+  filteredSummary={
+    municipio:'Pará (filtrado)',
+    municipios:filteredMunicipalData.length,
+    populacao:popTotal,
+    area_km2:filteredMunicipalData.reduce((a,c)=>a+c.area_km2,0),
+    cvli_total:cvliTotal,furto_total:furtoTotal,roubo_total:rouboTotal,
+    densidade_cvli:popTotal?(cvliTotal/popTotal)*100000:0,
+    densidade_furto:popTotal?(furtoTotal/popTotal)*100000:0,
+    densidade_roubo:popTotal?(rouboTotal/popTotal)*100000:0
+  };
+}
+
+// ── Populate dropdowns with cascading logic ──────────────────────
+function populateFilters(){
+  // Determine available options given current filters (excluding the filter being populated)
+  const fltRegional = activeFilters.regional;
+  const fltCidade   = activeFilters.cidade;
+  const fltFaixa    = activeFilters.faixa;
+  const fltMes      = activeFilters.mes;
+
+  const regionais=new Set(), cidades=new Set(), faixas=new Set(), meses=new Set();
+
+  allFeatures.forEach(ft=>{
+    const p=ft.properties||{};
+    const reg=p.regionais||'';
+    const cid=p.CIDADE||p.NM_MUN_y||'';
+    const fai=p.Faixa||'';
+    const mes=p.mes_fato||'';
+
+    // For each dropdown, filter by all OTHER active filters
+    // Regionais: filter by cidade, faixa, mes
+    if((!fltCidade||cid===fltCidade)&&(!fltFaixa||fai===fltFaixa)&&(!fltMes||mes===fltMes)) regionais.add(reg);
+    // Cidades: filter by regional, faixa, mes
+    if((!fltRegional||reg===fltRegional)&&(!fltFaixa||fai===fltFaixa)&&(!fltMes||mes===fltMes)) cidades.add(cid);
+    // Faixas: filter by regional, cidade, mes
+    if((!fltRegional||reg===fltRegional)&&(!fltCidade||cid===fltCidade)&&(!fltMes||mes===fltMes)) faixas.add(fai);
+    // Meses: filter by regional, cidade, faixa
+    if((!fltRegional||reg===fltRegional)&&(!fltCidade||cid===fltCidade)&&(!fltFaixa||fai===fltFaixa)) meses.add(mes);
+  });
+
+  const fillSelect=(id,values,current,allLabel)=>{
+    const el=byId(id);
+    const sorted=[...values].filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    el.innerHTML=`<option value="">${allLabel}</option>`+sorted.map(v=>`<option value="${v}" ${v===current?'selected':''}>${v}</option>`).join('');
+  };
+
+  fillSelect('flt-regional',[...regionais],fltRegional,'Todas');
+  fillSelect('flt-cidade',[...cidades],fltCidade,'Todas');
+  fillSelect('flt-faixa',[...faixas],fltFaixa,'Todas');
+
+  // Meses in calendar order
+  const mesOrdered=MONTHS.filter(m=>meses.has(m));
+  const elMes=byId('flt-mes');
+  elMes.innerHTML=`<option value="">Todos</option>`+mesOrdered.map(m=>`<option value="${m}" ${m===fltMes?'selected':''}>${m}</option>`).join('');
+
+  // Clear button state
+  const hasFilter=Object.values(activeFilters).some(v=>v!=='');
+  const btn=byId('flt-clear-btn');
+  btn.classList.toggle('active',hasFilter);
+}
+
+function onFilterChange(which){
+  activeFilters.regional = byId('flt-regional').value;
+  activeFilters.cidade   = byId('flt-cidade').value;
+  activeFilters.faixa    = byId('flt-faixa').value;
+  activeFilters.mes      = byId('flt-mes').value;
+
+  // If cidade selected, auto-fill regional
+  if(which==='cidade' && activeFilters.cidade){
+    const ft=allFeatures.find(f=>(f.properties.CIDADE||f.properties.NM_MUN_y||'')===activeFilters.cidade);
+    if(ft && ft.properties.regionais){
+      activeFilters.regional=ft.properties.regionais;
+    }
+  }
+
+  populateFilters();
+  applyFilters();
+}
+
+function clearFilters(){
+  activeFilters={regional:'',cidade:'',faixa:'',mes:''};
+  populateFilters();
+  applyFilters();
+}
+
+function applyFilters(){
+  rebuildFilteredData();
+  vizCache=null; // invalidate vizinhança cache on filter change
+  selectedId=null;
+  updateMetricRange();
+  buildMapLayer();
+  updateHeader();
+  updateNarrative();
+  updateKPIs();
+  updateDetailCard();
+  buildCompareChart();
+  buildRanking();
+  buildHistory();
+  buildRegionais();
+  updateHistBadge();
+}
+
+function updateHistBadge(){
+  const count=Object.values(activeFilters).filter(v=>v!=='').length;
+  const badge=byId('hist-filter-badge');
+  if(count>0){badge.style.display='inline';badge.textContent=`${count} filtro${count>1?'s':''} ativo${count>1?'s':''}`;}
+  else{badge.style.display='none';}
+}
+
+// ── Data processing ──────────────────────────────────────────────
+function processGeoJSON(geojson){
+  allFeatures = geojson.features;
+  const byMun=new Map();
+  const regionals=new Map();
+  MONTHS.forEach(m=>{ stateMonthly[m]={cvli_total:0,furto_total:0,roubo_total:0}; });
+
+  geojson.features.forEach(ft=>{
+    const p=ft.properties||{};
+    const id=String(p.CD_MUN);
+    const mes=p.mes_fato;
+    if(!byMun.has(id)){
+      byMun.set(id,{
+        cd_mun:id,
+        municipio:p.CIDADE||p.NM_MUN_y||`Mun ${id}`,
+        uf:p.SIGLA_UF||'PA',
+        nm_uf:p.NM_UF||'Pará',
+        regional:p.regionais||'Sem regional',
+        faixa_populacional:p.Faixa||'Sem faixa',
+        populacao:num(p['Polulação']),
+        area_km2:num(p.AREA_KM2),
+        n_meses_com_registro:0,
+        cvli_total:0,furto_total:0,roubo_total:0,
+        densidade_cvli:num(p['Densidade CVLI (100milhab)']),
+        densidade_furto:num(p['Densidade Furto (100milhab)']),
+        densidade_roubo:num(p['Densidade Roubo (100milhab)']),
+        geometry:ft.geometry,
+        monthly:{}
+      });
+    }
+    const row=byMun.get(id);
+    if(!row.monthly[mes]) row.monthly[mes]={cvli_total:0,furto_total:0,roubo_total:0};
+    row.cvli_total+=num(p.CVLI);
+    row.furto_total+=num(p.FURTO);
+    row.roubo_total+=num(p.ROUBO);
+    row.monthly[mes].cvli_total+=num(p.CVLI);
+    row.monthly[mes].furto_total+=num(p.FURTO);
+    row.monthly[mes].roubo_total+=num(p.ROUBO);
+    row.n_meses_com_registro=Object.keys(row.monthly).length;
+    if(stateMonthly[mes]){
+      stateMonthly[mes].cvli_total+=num(p.CVLI);
+      stateMonthly[mes].furto_total+=num(p.FURTO);
+      stateMonthly[mes].roubo_total+=num(p.ROUBO);
+    }
+  });
+
+  municipalData=Array.from(byMun.values()).sort((a,b)=>a.municipio.localeCompare(b.municipio,'pt-BR'));
+  municipalById=new Map(municipalData.map(d=>[d.cd_mun,d]));
+
+  municipalData.forEach(d=>{
+    if(!regionals.has(d.regional)) regionals.set(d.regional,{regional:d.regional,municipios:0,populacao:0,area_km2:0,cvli_total:0,furto_total:0,roubo_total:0});
+    const r=regionals.get(d.regional);
+    r.municipios++;r.populacao+=d.populacao;r.area_km2+=d.area_km2;
+    r.cvli_total+=d.cvli_total;r.furto_total+=d.furto_total;r.roubo_total+=d.roubo_total;
+  });
+  regionalData=Array.from(regionals.values()).map(r=>({
+    ...r,
+    densidade_cvli:r.populacao?(r.cvli_total/r.populacao)*100000:0,
+    densidade_furto:r.populacao?(r.furto_total/r.populacao)*100000:0,
+    densidade_roubo:r.populacao?(r.roubo_total/r.populacao)*100000:0
+  }));
+
+  const popTotal=municipalData.reduce((a,c)=>a+c.populacao,0);
+  const cvliTotal=municipalData.reduce((a,c)=>a+c.cvli_total,0);
+  const furtoTotal=municipalData.reduce((a,c)=>a+c.furto_total,0);
+  const rouboTotal=municipalData.reduce((a,c)=>a+c.roubo_total,0);
+  stateSummary={
+    municipio:'Pará',municipios:municipalData.length,
+    populacao:popTotal,area_km2:municipalData.reduce((a,c)=>a+c.area_km2,0),
+    cvli_total:cvliTotal,furto_total:furtoTotal,roubo_total:rouboTotal,
+    densidade_cvli:popTotal?(cvliTotal/popTotal)*100000:0,
+    densidade_furto:popTotal?(furtoTotal/popTotal)*100000:0,
+    densidade_roubo:popTotal?(rouboTotal/popTotal)*100000:0
+  };
+
+  // init filtered = full
+  filteredMunicipalData=[...municipalData];
+  filteredMonthly={...stateMonthly};
+  filteredRegionalData=[...regionalData];
+  filteredSummary={...stateSummary};
+}
+
+// ── Map ──────────────────────────────────────────────────────────
+function initMap(){
+  map=L.map('map',{center:[-3.8,-52.2],zoom:6,zoomControl:true});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© CartoDB',opacity:0.72}).addTo(map);
+}
+
+function updateMetricRange(){
+  const vals=filteredMunicipalData.map(d=>num(d[currentMetric])).filter(v=>Number.isFinite(v));
+  metricRange.min=Math.min(...vals);
+  metricRange.max=Math.max(...vals);
+}
+
+function metricColor(v){
+  const min=metricRange.min,max=metricRange.max;
+  const t=max===min?0.7:Math.sqrt((num(v)-min)/(max-min));
+  return mix('#13291b',METRICS[currentMetric].color,Math.max(0,Math.min(1,t)));
+}
+
+function styleFeature(feature){
+  const p=feature.properties;
+  const isSelected=String(p.cd_mun)===String(selectedId);
+  return{
+    fillColor:metricColor(p[currentMetric]),
+    fillOpacity:isSelected?0.88:0.72,
+    color:isSelected?'#ffffff':'#163520',
+    weight:isSelected?2.2:0.7,
+    opacity:0.95
+  };
+}
+
+function buildMapLayer(){
+  updateMetricRange();
+  const aggGeo={
+    type:'FeatureCollection',
+    features:filteredMunicipalData.map(d=>({
+      type:'Feature',
+      properties:{
+        cd_mun:d.cd_mun,municipio:d.municipio,uf:d.uf,regional:d.regional,
+        faixa_populacional:d.faixa_populacional,populacao:d.populacao,area_km2:d.area_km2,
+        cvli_total:d.cvli_total,furto_total:d.furto_total,roubo_total:d.roubo_total,
+        densidade_cvli:d.densidade_cvli,densidade_furto:d.densidade_furto,densidade_roubo:d.densidade_roubo
+      },
+      geometry:d.geometry
+    }))
+  };
+
+  if(layerMun) map.removeLayer(layerMun);
+  layerMun=L.geoJSON(aggGeo,{
+    style:styleFeature,
+    onEachFeature:(feature,layer)=>{
+      const p=feature.properties;
+      layer.on('mouseover',e=>{
+        layer.setStyle({weight:2,color:'#fff',fillOpacity:0.9});
+        const main=METRICS[currentMetric];
+        layer.bindTooltip(`
+          <div style="min-width:220px">
+            <b style="color:#bbf7d0">${p.municipio}</b><br>
+            <span style="color:#3d6b4a">${p.regional} · ${p.uf}</span><br><br>
+            <span style="color:#86efac">${main.label}:</span> <b>${main.fmt(p[currentMetric])}</b><br>
+            CVLI: <b>${fmtInt(p.cvli_total)}</b><br>
+            Furto: <b>${fmtInt(p.furto_total)}</b><br>
+            Roubo: <b>${fmtInt(p.roubo_total)}</b><br>
+            Dens. CVLI: <b>${fmtDec(p.densidade_cvli)}</b><br>
+            Dens. Furto: <b>${fmtDec(p.densidade_furto)}</b><br>
+            Dens. Roubo: <b>${fmtDec(p.densidade_roubo)}</b>
+          </div>
+        `,{className:'lf-tip',sticky:true}).openTooltip(e.latlng);
+      });
+      layer.on('mouseout',()=>{ layerMun.resetStyle(layer); layer.closeTooltip(); });
+      layer.on('click',()=>{
+        selectedId=p.cd_mun;
+        refreshSelection();
+        try{ map.fitBounds(layer.getBounds(),{padding:[20,20]}); }catch(e){}
+      });
+    }
+  }).addTo(map);
+  try{ map.fitBounds(layerMun.getBounds(),{padding:[20,20]}); }catch(e){}
+  updateLegend();
+}
+
+function updateLegend(){
+  byId('leg-title').textContent=METRICS[currentMetric].label+' no mapa';
+  byId('leg-scale').style.background=`linear-gradient(to right,#13291b,#1f4a2c,${mix('#1f4a2c',METRICS[currentMetric].color,.45)},${METRICS[currentMetric].color})`;
+  byId('leg-min').textContent=METRICS[currentMetric].fmt(metricRange.min);
+  byId('leg-max').textContent=METRICS[currentMetric].fmt(metricRange.max);
+}
+
+// ── Scope helpers ────────────────────────────────────────────────
+function selectedScope(){
+  if(selectedId){
+    return filteredMunicipalData.find(d=>d.cd_mun===String(selectedId)) || filteredSummary;
+  }
+  return filteredSummary;
+}
+
+function updateHeader(){
+  byId('hdr-cvli').textContent=fmtInt(filteredSummary.cvli_total);
+  byId('hdr-furto').textContent=fmtInt(filteredSummary.furto_total);
+  byId('hdr-roubo').textContent=fmtInt(filteredSummary.roubo_total);
+  byId('hdr-mun').textContent=fmtInt(filteredSummary.municipios);
+}
+
+function updateNarrative(){
+  const scope=selectedScope();
+  if(selectedId){
+    byId('narr-main').innerHTML=`
+      <strong>${scope.municipio}</strong> possui
+      <strong>${fmtInt(scope.cvli_total)}</strong> CVLI,
+      <strong>${fmtInt(scope.furto_total)}</strong> furtos e
+      <strong>${fmtInt(scope.roubo_total)}</strong> roubos no período.
+      Regional: <strong>${scope.regional}</strong>.
+    `;
+  }else{
+    const total=Object.values(filteredMonthly).reduce((a,c)=>a+c.cvli_total+c.furto_total+c.roubo_total,0);
+    byId('narr-main').innerHTML=`
+      Exibindo <strong>${fmtInt(filteredSummary.municipios)}</strong> municípios com
+      <strong>${fmtInt(total)}</strong> ocorrências somadas.
+      Use o mapa para explorar <strong>CVLI</strong>, <strong>Furto</strong> e <strong>Roubo</strong>.
+    `;
+  }
+}
+
+function updateKPIs(){
+  const scope=selectedScope();
+  byId('kpi-sel-lbl').textContent=selectedId?scope.municipio:'Pará';
+  byId('kpi-grid').innerHTML=`
+    ${kpiItem(fmtInt(scope.cvli_total),'CVLI','red')}
+    ${kpiItem(fmtInt(scope.furto_total),'Furto','amber')}
+    ${kpiItem(fmtInt(scope.roubo_total),'Roubo','blue')}
+    ${kpiItem(fmtDec(scope.densidade_cvli),'Dens. CVLI','pink')}
+    ${kpiItem(fmtDec(scope.densidade_furto),'Dens. Furto','teal')}
+    ${kpiItem(fmtDec(scope.densidade_roubo),'Dens. Roubo','purple')}
+  `;
+}
+function kpiItem(value,label,klass){
+  return`<div class="kpi"><div class="kval ${klass}">${value}</div><div class="klbl">${label}</div></div>`;
+}
+
+function updateDetailCard(){
+  const scope=selectedScope();
+  if(!selectedId){ byId('detail-card').style.display='none'; return; }
+  byId('detail-card').style.display='block';
+  byId('det-nome').textContent=scope.municipio;
+  byId('det-stats').innerHTML=`
+    <div class="srow"><span class="slbl">Regional</span><span class="sval">${scope.regional}</span></div>
+    <div class="srow"><span class="slbl">Faixa populacional</span><span class="sval">${scope.faixa_populacional}</span></div>
+    <div class="srow"><span class="slbl">População</span><span class="sval">${fmtInt(scope.populacao)}</span></div>
+    <div class="srow"><span class="slbl">Área</span><span class="sval">${fmtArea(scope.area_km2)}</span></div>
+    <div class="srow"><span class="slbl">Meses com registro</span><span class="sval">${fmtInt(scope.n_meses_com_registro)}</span></div>
+    <div class="srow"><span class="slbl">CVLI</span><span class="sval">${fmtInt(scope.cvli_total)}</span></div>
+    <div class="srow"><span class="slbl">Furto</span><span class="sval">${fmtInt(scope.furto_total)}</span></div>
+    <div class="srow"><span class="slbl">Roubo</span><span class="sval">${fmtInt(scope.roubo_total)}</span></div>
+    <div class="srow"><span class="slbl">Densidade CVLI</span><span class="sval">${fmtDec(scope.densidade_cvli)}</span></div>
+    <div class="srow"><span class="slbl">Densidade Furto</span><span class="sval">${fmtDec(scope.densidade_furto)}</span></div>
+    <div class="srow"><span class="slbl">Densidade Roubo</span><span class="sval">${fmtDec(scope.densidade_roubo)}</span></div>
+  `;
+}
+
+// ── Comparação Mensal ────────────────────────────────────────────
+// Mapping from METRICS key to monthly raw field
+const METRIC_MONTHLY_FIELD = {
+  cvli_total:      'cvli_total',
+  furto_total:     'furto_total',
+  roubo_total:     'roubo_total',
+  densidade_cvli:  'cvli_total',
+  densidade_furto: 'furto_total',
+  densidade_roubo: 'roubo_total'
+};
+
+function buildCompareChart(){
+  const m = METRICS[currentMetric];
+  const pop = filteredSummary.populacao || 1;
+  const isDensity = m.type === 'density';
+  const field = METRIC_MONTHLY_FIELD[currentMetric];
+
+  // Update card title
+  byId('compare-metric-lbl').textContent = m.label;
+  byId('compare-metric-lbl').style.color = m.color;
+
+  const activeMeses = MONTHS.filter(mes => {
+    const d = filteredMonthly[mes];
+    return d && (d.cvli_total+d.furto_total+d.roubo_total) > 0;
+  });
+  const labels = activeMeses.map(mes => MONTHS_SHORT[MONTHS.indexOf(mes)]);
+
+  const rawData = activeMeses.map(mes => filteredMonthly[mes]?.[field]||0);
+  const data = isDensity ? rawData.map(v=>(v/pop)*100000) : rawData;
+
+  const avg = data.length ? data.reduce((a,b)=>a+b,0)/data.length : 0;
+
+  const datasets = [
+    {
+      label: m.label,
+      data,
+      backgroundColor: m.color + 'cc',
+      borderRadius: 4,
+      borderSkipped: false,
+      order: 2
+    },
+    {
+      label: 'Média',
+      data: data.map(()=>avg),
+      type: 'line',
+      borderColor: '#ffffff99',
+      borderWidth: 1.5,
+      borderDash: [5,4],
+      pointRadius: 0,
+      fill: false,
+      order: 1
+    }
+  ];
+
+  const fmtVal = c => c.dataset.label==='Média' ? `Média: ${m.fmt(c.raw)}` : `${m.label}: ${m.fmt(c.raw)}`;
+
+  const ctx=byId('chart-compare').getContext('2d');
+  if(cCompare) cCompare.destroy();
+  cCompare=new Chart(ctx,{
+    type:'bar',
+    data:{labels, datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:350},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#030a05',borderColor:'#163520',borderWidth:1,
+          titleColor:'#bbf7d0',bodyColor:'#86efac',
+          callbacks:{label:fmtVal}
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#86efac',font:{size:9}},grid:{color:'#0f2214'}},
+        y:{ticks:{color:'#3d6b4a',font:{size:9}},grid:{color:'#0f2214'}}
+      }
+    }
+  });
+}
+
+// ── Ranking ──────────────────────────────────────────────────────
+function buildMetricButtons(containerId,activeKey,handlerName){
+  byId(containerId).innerHTML=Object.entries(METRICS).map(([key,m])=>
+    `<button class="mbtn ${key===activeKey?'on':''}" onclick="${handlerName}('${key}')">${m.short}</button>`
+  ).join('');
+}
+
+function buildRanking(){
+  const data=[...filteredMunicipalData].sort((a,b)=>num(b[rankMetric])-num(a[rankMetric]));
+  const top20=data.slice(0,20);
+  const top50=data.slice(0,50);
+  byId('rank-title').textContent=METRICS[rankMetric].label;
+
+  const rankVals = top20.map(d=>num(d[rankMetric]));
+  const rankAvg = rankVals.length ? rankVals.reduce((a,b)=>a+b,0)/rankVals.length : 0;
+
+  const ctx=byId('chart-rank-bar').getContext('2d');
+  if(cRank) cRank.destroy();
+  cRank=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:top20.map(d=>d.municipio),
+      datasets:[
+        {
+          data:rankVals,
+          backgroundColor:top20.map(()=>METRICS[rankMetric].color),
+          borderRadius:4,borderSkipped:false,order:2
+        },
+        {
+          label:'Média',
+          data:rankVals.map(()=>rankAvg),
+          type:'line',
+          borderColor:'#ffffff99',
+          borderWidth:1.5,
+          borderDash:[5,4],
+          pointRadius:0,
+          fill:false,
+          order:1
+        }
+      ]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:350},
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#030a05',borderColor:'#163520',borderWidth:1,titleColor:'#bbf7d0',bodyColor:'#86efac',callbacks:{label:c=>c.dataset.label==='Média'?`Média: ${METRICS[rankMetric].fmt(c.raw)}`:METRICS[rankMetric].fmt(c.raw)}}
+      },
+      scales:{
+        x:{ticks:{color:'#3d6b4a',font:{size:8}},grid:{color:'#0f2214'}},
+        y:{ticks:{color:'#86efac',font:{size:9}},grid:{color:'#0f2214'}}
+      }
+    }
+  });
+
+  const maxV=num(top50[0]?.[rankMetric])||1;
+  byId('ranking-mun').innerHTML=top50.map((r,i)=>{
+    const pct=(num(r[rankMetric])/maxV)*100;
+    return`<div class="ritem">
+      <span class="rnum">${i+1}</span>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between">
+          <div class="rname">${r.municipio}<small>${r.regional}</small></div>
+          <span class="rval">${METRICS[rankMetric].fmt(r[rankMetric])}</span>
+        </div>
+        <div class="rbar"><div class="rfill" style="width:${pct.toFixed(0)}%"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── History ──────────────────────────────────────────────────────
+function buildHistory(){
+  const activeMeses=MONTHS.filter(m=>{
+    const d=filteredMonthly[m];
+    return d&&(d.cvli_total+d.furto_total+d.roubo_total)>0;
+  });
+  const labels=activeMeses.map(m=>MONTHS_SHORT[MONTHS.indexOf(m)]);
+  const countsCvli=activeMeses.map(m=>filteredMonthly[m]?.cvli_total||0);
+  const countsFurto=activeMeses.map(m=>filteredMonthly[m]?.furto_total||0);
+  const countsRoubo=activeMeses.map(m=>filteredMonthly[m]?.roubo_total||0);
+  const pop=filteredSummary.populacao||1;
+  const densCvli=countsCvli.map(v=>(v/pop)*100000);
+  const densFurto=countsFurto.map(v=>(v/pop)*100000);
+  const densRoubo=countsRoubo.map(v=>(v/pop)*100000);
+
+  const baseOpt={
+    responsive:true,maintainAspectRatio:false,animation:{duration:350},
+    plugins:{
+      legend:{labels:{color:'#86efac',font:{size:9}}},
+      tooltip:{backgroundColor:'#030a05',borderColor:'#163520',borderWidth:1,titleColor:'#bbf7d0',bodyColor:'#86efac'}
+    },
+    scales:{
+      x:{ticks:{color:'#3d6b4a',font:{size:8}},grid:{color:'#0f2214'}},
+      y:{ticks:{color:'#3d6b4a',font:{size:9}},grid:{color:'#0f2214'}}
+    }
+  };
+
+  const ctx1=byId('chart-serie-ocorrencias').getContext('2d');
+  if(cSerieOc) cSerieOc.destroy();
+  cSerieOc=new Chart(ctx1,{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'CVLI', data:countsCvli, borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.08)',fill:false,tension:.35,pointRadius:2},
+      {label:'Furto',data:countsFurto,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.08)', fill:false,tension:.35,pointRadius:2},
+      {label:'Roubo',data:countsRoubo,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.08)', fill:false,tension:.35,pointRadius:2}
+    ]},
+    options:baseOpt
+  });
+
+  const ctx2=byId('chart-serie-densidade').getContext('2d');
+  if(cSerieDen) cSerieDen.destroy();
+  cSerieDen=new Chart(ctx2,{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Dens. CVLI', data:densCvli, borderColor:'#f472b6',backgroundColor:'rgba(244,114,182,.08)',fill:false,tension:.35,pointRadius:2},
+      {label:'Dens. Furto',data:densFurto,borderColor:'#2dd4bf',backgroundColor:'rgba(45,212,191,.08)', fill:false,tension:.35,pointRadius:2},
+      {label:'Dens. Roubo',data:densRoubo,borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,.08)',fill:false,tension:.35,pointRadius:2}
+    ]},
+    options:baseOpt
+  });
+}
+
+// ── Regionais ────────────────────────────────────────────────────
+function buildRegionais(){
+  const data=[...filteredRegionalData].sort((a,b)=>num(b[regionalMetric])-num(a[regionalMetric]));
+  byId('regional-title').textContent=METRICS[regionalMetric].label;
+
+  const regVals = data.map(d=>num(d[regionalMetric]));
+  const regAvg = regVals.length ? regVals.reduce((a,b)=>a+b,0)/regVals.length : 0;
+
+  const ctx=byId('chart-regionais').getContext('2d');
+  if(cRegionais) cRegionais.destroy();
+  cRegionais=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:data.map(d=>d.regional),
+      datasets:[
+        {
+          data:regVals,
+          backgroundColor:data.map(()=>METRICS[regionalMetric].color),
+          borderRadius:4,borderSkipped:false,order:2
+        },
+        {
+          label:'Média',
+          data:regVals.map(()=>regAvg),
+          type:'line',
+          borderColor:'#ffffff99',
+          borderWidth:1.5,
+          borderDash:[5,4],
+          pointRadius:0,
+          fill:false,
+          order:1
+        }
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:350},
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#030a05',borderColor:'#163520',borderWidth:1,titleColor:'#bbf7d0',bodyColor:'#86efac',callbacks:{label:c=>c.dataset.label==='Média'?`Média: ${METRICS[regionalMetric].fmt(c.raw)}`:METRICS[regionalMetric].fmt(c.raw)}}
+      },
+      scales:{
+        x:{ticks:{color:'#86efac',font:{size:8},maxRotation:40,minRotation:40},grid:{color:'#0f2214'}},
+        y:{ticks:{color:'#3d6b4a',font:{size:9}},grid:{color:'#0f2214'}}
+      }
+    }
+  });
+
+  byId('regional-detail').innerHTML=data.map(r=>`
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:${METRICS[regionalMetric].color};margin-bottom:5px">
+        ${r.regional} — ${METRICS[regionalMetric].fmt(r[regionalMetric])}
+      </div>
+      <div class="srow"><span class="slbl">Municípios</span><span class="sval">${fmtInt(r.municipios)}</span></div>
+      <div class="srow"><span class="slbl">CVLI</span><span class="sval">${fmtInt(r.cvli_total)}</span></div>
+      <div class="srow"><span class="slbl">Furto</span><span class="sval">${fmtInt(r.furto_total)}</span></div>
+      <div class="srow"><span class="slbl">Roubo</span><span class="sval">${fmtInt(r.roubo_total)}</span></div>
+      <div class="srow"><span class="slbl">Densidade CVLI</span><span class="sval">${fmtDec(r.densidade_cvli)}</span></div>
+      <div class="srow"><span class="slbl">Densidade Furto</span><span class="sval">${fmtDec(r.densidade_furto)}</span></div>
+      <div class="srow"><span class="slbl">Densidade Roubo</span><span class="sval">${fmtDec(r.densidade_roubo)}</span></div>
+    </div>
+  `).join('');
+}
+
+// ── Análise de Vizinhança ─────────────────────────────────────────
+let vizCache = null; // cache: {data, indicador, filterKey}
+
+function getBBoxFromGeometry(geom){
+  // Returns [minX, minY, maxX, maxY] from a GeoJSON geometry
+  const coords = [];
+  function extract(c){
+    if(typeof c[0]==='number') coords.push(c);
+    else c.forEach(extract);
+  }
+  if(geom.coordinates) extract(geom.coordinates);
+  if(!coords.length) return null;
+  const xs=coords.map(c=>c[0]), ys=coords.map(c=>c[1]);
+  return [Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];
+}
+
+function bboxOverlap(a,b,buf=0.001){
+  if(!a||!b) return false;
+  return !(a[2]+buf<b[0]||b[2]+buf<a[0]||a[3]+buf<b[1]||b[3]+buf<a[1]);
+}
+
+function calcularVizinhanca(munData, indicador){
+  // Build bbox index
+  const items = munData.map((d,i)=>({...d, _idx:i, _bbox:getBBoxFromGeometry(d.geometry)}));
+  const result = items.map(d=>({
+    ...d,
+    _mediaViz: null,
+    _pressao: null,
+    _nViz: 0
+  }));
+
+  result.forEach((row,i)=>{
+    const candidates = result.filter((_,j)=>j!==i && bboxOverlap(row._bbox, result[j]._bbox));
+    const n = candidates.length;
+    row._nViz = n;
+    if(n>0){
+      const vals = candidates.map(c=>num(c[indicador])).filter(v=>Number.isFinite(v));
+      const media = vals.reduce((a,b)=>a+b,0)/vals.length;
+      row._mediaViz = media;
+      row._pressao = num(row[indicador]) - media;
+    }
+  });
+  return result;
+}
+
+function pressaoColor(pressao, maxAbs){
+  if(pressao===null||pressao===undefined||isNaN(pressao)) return '#3d6b4a';
+  const t = maxAbs===0 ? 0 : Math.max(-1,Math.min(1, pressao/maxAbs));
+  if(t>=0){
+    // 0 → white, 1 → red
+    return mix('#e5e7eb','#ef4444',t);
+  } else {
+    // 0 → white, -1 → blue
+    return mix('#e5e7eb','#3b82f6',-t);
+  }
+}
+
+function buildVizinhanca(){
+  if(filteredMunicipalData.length===0) return;
+
+  const indicador = byId('viz-indicador').value;
+  const m = METRICS[indicador];
+  const isDensity = m.type==='density';
+
+  // Cache key
+  const filterKey = JSON.stringify(activeFilters)+indicador;
+  if(!vizCache || vizCache.filterKey!==filterKey){
+    byId('viz-kpis').innerHTML='<div class="viz-spinner">⏳ Calculando vizinhança...</div>';
+    byId('viz-ranks').innerHTML='';
+    byId('viz-table').innerHTML='';
+    // Use setTimeout to allow UI to update before heavy computation
+    setTimeout(()=>{
+      const data = calcularVizinhanca(filteredMunicipalData, indicador);
+      vizCache = {data, indicador, filterKey};
+      renderVizinhanca(data, indicador, m, isDensity);
+    }, 30);
+  } else {
+    renderVizinhanca(vizCache.data, indicador, m, isDensity);
+  }
+
+  // Update map legend
+  byId('leg-viz-ind').textContent = m.label;
+
+  // Update table label
+  byId('viz-table-lbl').textContent = m.label;
+}
+
+function renderVizinhanca(data, indicador, m, isDensity){
+  // KPIs
+  const total = data.reduce((a,c)=>a+num(c[indicador]),0);
+  const maxVal = Math.max(...data.map(d=>num(d[indicador])));
+  const nMun = data.length;
+  byId('viz-kpis').innerHTML=`
+    ${kpiItem(fmtInt(nMun),'Municípios','teal')}
+    ${isDensity ? kpiItem(fmtDec(total/nMun),'Média','pink') : kpiItem(fmtInt(total),'Total','red')}
+    ${isDensity ? kpiItem(fmtDec(maxVal),'Máximo','amber') : kpiItem(fmtInt(maxVal),'Máximo','amber')}
+  `;
+
+  // Epicentros & Ilhas
+  const sorted = [...data].filter(d=>d._pressao!==null).sort((a,b)=>b._pressao-a._pressao);
+  const top5epi = sorted.slice(0,5);
+  const top5ilha = [...sorted].reverse().slice(0,5);
+
+  const fmtV = v => isDensity ? fmtDec(v) : fmtInt(v);
+
+  byId('viz-ranks').innerHTML=`
+    <div class="viz-rank-col">
+      <h5 class="epi">🔴 Top 5 Epicentros</h5>
+      ${top5epi.map(d=>`
+        <div class="viz-row">
+          <span class="vr-name" title="${d.municipio}">${d.municipio}</span>
+          <span class="vr-val epi">+${fmtV(d._pressao)}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="viz-rank-col">
+      <h5 class="ilha">🔵 Top 5 Ilhas</h5>
+      ${top5ilha.map(d=>`
+        <div class="viz-row">
+          <span class="vr-name" title="${d.municipio}">${d.municipio}</span>
+          <span class="vr-val ilha">${fmtV(d._pressao)}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // Table
+  const pressoes = data.map(d=>d._pressao).filter(v=>v!==null&&!isNaN(v));
+  const maxAbs = Math.max(...pressoes.map(Math.abs));
+
+  const tableRows = [...data]
+    .filter(d=>d._pressao!==null)
+    .sort((a,b)=>b._pressao-a._pressao)
+    .map((d,i)=>{
+      const pColor = pressaoColor(d._pressao, maxAbs);
+      const badge = d._pressao>0
+        ? `<span style="color:#f87171;font-size:9px">▲ Epicentro</span>`
+        : `<span style="color:#60a5fa;font-size:9px">▼ Ilha</span>`;
+      return`<div class="ritem" style="border-left:3px solid ${pColor}">
+        <span class="rnum">${i+1}</span>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="rname">${d.municipio}<small>${d.regional}</small></div>
+            <div style="text-align:right">
+              <div style="font-family:var(--mono);font-size:11px;font-weight:600;color:${pColor}">${d._pressao>=0?'+':''}${fmtV(d._pressao)}</div>
+              ${badge}
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:3px;font-size:9px;color:var(--muted)">
+            <span>Valor: <b style="color:var(--txt2)">${fmtV(num(d[indicador]))}</b></span>
+            <span>Média viz.: <b style="color:var(--txt2)">${d._mediaViz!==null?fmtV(d._mediaViz):'—'}</b></span>
+            <span>Vizinhos: <b style="color:var(--txt2)">${d._nViz}</b></span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+  byId('viz-table').innerHTML = tableRows || '<div style="color:var(--muted);font-size:11px;padding:10px">Sem dados suficientes para calcular vizinhança.</div>';
+
+  // Update map with pressure colors
+  updateMapVizinhanca(data, indicador, maxAbs);
+}
+
+function updateMapVizinhanca(data, indicador, maxAbs){
+  if(!layerMun) return;
+  const pressaoMap = new Map(data.map(d=>[d.cd_mun, d._pressao]));
+  layerMun.eachLayer(layer=>{
+    const p = layer.feature?.properties;
+    if(!p) return;
+    const pressao = pressaoMap.get(String(p.cd_mun));
+    const color = pressaoColor(pressao, maxAbs);
+    layer.setStyle({fillColor:color, fillOpacity:0.78, color:'#163520', weight:0.7});
+  });
+  // Show viz legend, hide normal legend
+  byId('leg').style.display='none';
+  byId('leg-viz').style.display='block';
+}
+
+function deactivateVizinhanca(){
+  byId('leg').style.display='block';
+  byId('leg-viz').style.display='none';
+  if(layerMun) layerMun.setStyle(styleFeature);
+}
+
+function activateVizinhanca(){
+  // Switch to vizinhança tab
+  switchTab('vizinhanca');
+  buildVizinhanca();
+}
+
+// ── Refresh / setters ────────────────────────────────────────────
+function refreshSelection(){
+  if(layerMun) layerMun.setStyle(styleFeature);
+  updateNarrative();
+  updateKPIs();
+  updateDetailCard();
+  buildCompareChart();
+}
+
+function setMapMetric(key){
+  currentMetric=key;
+  buildMetricButtons('metric-map-panel',currentMetric,'setMapMetric');
+  updateMetricRange();
+  if(layerMun) layerMun.setStyle(styleFeature);
+  updateLegend();
+  updateNarrative();
+  buildCompareChart();
+}
+function setRankMetric(key){
+  rankMetric=key;
+  buildMetricButtons('metric-rank',rankMetric,'setRankMetric');
+  buildRanking();
+}
+function setRegionalMetric(key){
+  regionalMetric=key;
+  buildMetricButtons('metric-regional',regionalMetric,'setRegionalMetric');
+  buildRegionais();
+}
+
+function switchTab(t){
+  ['visao','ranking','historia','regionais','vizinhanca'].forEach((id,i)=>{
+    document.querySelectorAll('.tab')[i].classList.toggle('active',id===t);
+    byId(`tc-${id}`).classList.toggle('active',id===t);
+  });
+  if(t==='ranking') buildRanking();
+  if(t==='historia') buildHistory();
+  if(t==='regionais') buildRegionais();
+  if(t==='vizinhanca'){ buildVizinhanca(); }
+  else { deactivateVizinhanca(); }
+}
+
+// ── Boot ─────────────────────────────────────────────────────────
+async function loadAll(){
+  try{
+    byId('load-detail').textContent='Carregando GeoJSON municipal...';
+    const geojson=await fetch(GEOJSON_URL).then(r=>{
+      if(!r.ok) throw new Error('Falha ao carregar '+GEOJSON_URL);
+      return r.json();
+    });
+
+    byId('load-detail').textContent='Agregando municípios...';
+    processGeoJSON(geojson);
+
+    byId('load-detail').textContent='Montando mapa...';
+    initMap();
+    populateFilters();
+    buildMetricButtons('metric-map-panel',currentMetric,'setMapMetric');
+    buildMetricButtons('metric-rank',rankMetric,'setRankMetric');
+    buildMetricButtons('metric-regional',regionalMetric,'setRegionalMetric');
+    buildMapLayer();
+
+    updateHeader();
+    updateNarrative();
+    updateKPIs();
+    updateDetailCard();
+    buildCompareChart();
+    buildRanking();
+    buildHistory();
+    buildRegionais();
+
+    byId('loading').style.display='none';
+  }catch(err){
+    console.error(err);
+    byId('load-detail').textContent=err.message;
+    alert('Não foi possível carregar o GeoJSON. Verifique se o arquivo dados_seguranca_puplica_pa.geojson está na mesma pasta do index.html.');
+  }
+}
+
+window.addEventListener('load',loadAll);
+</script>
+</body>
+</html>
