@@ -47,10 +47,11 @@ Nenhuma instalação é necessária, apenas um navegador moderno.
 
 ## 📁 Estrutura do Projeto
 
+```
 projeto/
-├── index.html # Aplicação completa (HTML + CSS + JS)
-└── dados_seguranca_puplica_pa.geojson # Base de dados geoespacial municipal
----
+├── index.html                          # Aplicação completa (HTML + CSS + JS)
+└── dados_seguranca_puplica_pa.geojson  # Base de dados geoespacial municipal
+```
 
 ## 🗂️ Funcionalidades por Aba
 
