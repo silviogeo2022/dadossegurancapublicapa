@@ -32,7 +32,8 @@ body{
   display:flex;align-items:center;gap:16px;padding:0 18px;
   box-shadow:0 2px 20px rgba(0,0,0,.6);
 }
-.hdr-icon{font-size:24px}
+.hdr-icon{font-size:24px;display:flex;align-items:center}
+.hdr-logo{height:38px;width:auto;object-fit:contain}
 .hdr-t h1{font-size:15px;font-weight:700;color:#bbf7d0;line-height:1.2}
 .hdr-t p{font-size:9.5px;color:var(--muted);margin-top:1px}
 .hdr-kpis{margin-left:auto;display:flex;gap:20px;align-items:center}
@@ -244,7 +245,7 @@ body{
 </div>
 
 <div id="hdr">
-  <div class="hdr-icon">🛡️</div>
+  <div class="hdr-icon"><img src="logo.png" alt="SEMUSP" class="hdr-logo"></div>
   <div class="hdr-t">
     <h1>Segurança Pública · Municípios do Pará</h1>
     <p>GeoJSON municipal agregado no navegador · CVLI, Furto, Roubo e Densidades</p>
@@ -290,6 +291,12 @@ body{
         <span class="flt-label">👥 Faixa Populacional</span>
         <select class="flt-select" id="flt-faixa" onchange="onFilterChange('faixa')">
           <option value="">Todas</option>
+        </select>
+      </div>
+      <div class="flt-group">
+        <span class="flt-label">📆 Ano</span>
+        <select class="flt-select" id="flt-ano" onchange="onFilterChange('ano')">
+          <option value="">Todos</option>
         </select>
       </div>
       <div class="flt-group">
@@ -483,7 +490,7 @@ let selectedId     = null;
 let metricRange    = {min:0,max:1};
 
 // active filters
-let activeFilters = { regional:'', cidade:'', faixa:'', mes:'' };
+let activeFilters = { regional:'', cidade:'', faixa:'', ano:'', mes:'' };
 
 let cCompare=null, cRank=null, cSerieOc=null, cSerieDen=null, cRegionais=null;
 
@@ -513,6 +520,7 @@ function getFilteredFeatures(){
     if(activeFilters.regional && p.regionais !== activeFilters.regional) return false;
     if(activeFilters.cidade   && (p.CIDADE||p.NM_MUN_y||'') !== activeFilters.cidade) return false;
     if(activeFilters.faixa    && p.Faixa !== activeFilters.faixa) return false;
+    if(activeFilters.ano      && String(p.Ano) !== activeFilters.ano) return false;
     if(activeFilters.mes      && p.mes_fato !== activeFilters.mes) return false;
     return true;
   });
@@ -607,26 +615,30 @@ function populateFilters(){
   const fltRegional = activeFilters.regional;
   const fltCidade   = activeFilters.cidade;
   const fltFaixa    = activeFilters.faixa;
+  const fltAno      = activeFilters.ano;
   const fltMes      = activeFilters.mes;
 
-  const regionais=new Set(), cidades=new Set(), faixas=new Set(), meses=new Set();
+  const regionais=new Set(), cidades=new Set(), faixas=new Set(), anos=new Set(), meses=new Set();
 
   allFeatures.forEach(ft=>{
     const p=ft.properties||{};
     const reg=p.regionais||'';
     const cid=p.CIDADE||p.NM_MUN_y||'';
     const fai=p.Faixa||'';
+    const ano=String(p.Ano||'');
     const mes=p.mes_fato||'';
 
     // For each dropdown, filter by all OTHER active filters
-    // Regionais: filter by cidade, faixa, mes
-    if((!fltCidade||cid===fltCidade)&&(!fltFaixa||fai===fltFaixa)&&(!fltMes||mes===fltMes)) regionais.add(reg);
-    // Cidades: filter by regional, faixa, mes
-    if((!fltRegional||reg===fltRegional)&&(!fltFaixa||fai===fltFaixa)&&(!fltMes||mes===fltMes)) cidades.add(cid);
-    // Faixas: filter by regional, cidade, mes
-    if((!fltRegional||reg===fltRegional)&&(!fltCidade||cid===fltCidade)&&(!fltMes||mes===fltMes)) faixas.add(fai);
-    // Meses: filter by regional, cidade, faixa
-    if((!fltRegional||reg===fltRegional)&&(!fltCidade||cid===fltCidade)&&(!fltFaixa||fai===fltFaixa)) meses.add(mes);
+    // Regionais: filter by cidade, faixa, ano, mes
+    if((!fltCidade||cid===fltCidade)&&(!fltFaixa||fai===fltFaixa)&&(!fltAno||ano===fltAno)&&(!fltMes||mes===fltMes)) regionais.add(reg);
+    // Cidades: filter by regional, faixa, ano, mes
+    if((!fltRegional||reg===fltRegional)&&(!fltFaixa||fai===fltFaixa)&&(!fltAno||ano===fltAno)&&(!fltMes||mes===fltMes)) cidades.add(cid);
+    // Faixas: filter by regional, cidade, ano, mes
+    if((!fltRegional||reg===fltRegional)&&(!fltCidade||cid===fltCidade)&&(!fltAno||ano===fltAno)&&(!fltMes||mes===fltMes)) faixas.add(fai);
+    // Anos: filter by regional, cidade, faixa, mes
+    if((!fltRegional||reg===fltRegional)&&(!fltCidade||cid===fltCidade)&&(!fltFaixa||fai===fltFaixa)&&(!fltMes||mes===fltMes)) anos.add(ano);
+    // Meses: filter by regional, cidade, faixa, ano
+    if((!fltRegional||reg===fltRegional)&&(!fltCidade||cid===fltCidade)&&(!fltFaixa||fai===fltFaixa)&&(!fltAno||ano===fltAno)) meses.add(mes);
   });
 
   const fillSelect=(id,values,current,allLabel)=>{
@@ -638,6 +650,11 @@ function populateFilters(){
   fillSelect('flt-regional',[...regionais],fltRegional,'Todas');
   fillSelect('flt-cidade',[...cidades],fltCidade,'Todas');
   fillSelect('flt-faixa',[...faixas],fltFaixa,'Todas');
+
+  // Anos in numeric order
+  const anosOrdered=[...anos].filter(Boolean).sort((a,b)=>Number(a)-Number(b));
+  const elAno=byId('flt-ano');
+  elAno.innerHTML=`<option value="">Todos</option>`+anosOrdered.map(a=>`<option value="${a}" ${a===fltAno?'selected':''}>${a}</option>`).join('');
 
   // Meses in calendar order
   const mesOrdered=MONTHS.filter(m=>meses.has(m));
@@ -654,6 +671,7 @@ function onFilterChange(which){
   activeFilters.regional = byId('flt-regional').value;
   activeFilters.cidade   = byId('flt-cidade').value;
   activeFilters.faixa    = byId('flt-faixa').value;
+  activeFilters.ano      = byId('flt-ano').value;
   activeFilters.mes      = byId('flt-mes').value;
 
   // If cidade selected, auto-fill regional
@@ -669,7 +687,7 @@ function onFilterChange(which){
 }
 
 function clearFilters(){
-  activeFilters={regional:'',cidade:'',faixa:'',mes:''};
+  activeFilters={regional:'',cidade:'',faixa:'',ano:'',mes:''};
   populateFilters();
   applyFilters();
 }
